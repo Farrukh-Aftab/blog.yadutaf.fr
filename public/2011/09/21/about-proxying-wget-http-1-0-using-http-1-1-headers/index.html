@@ -112,8 +112,6 @@ Client &lt;----&gt; Reverse-Proxy |&lt;-----&gt; Etherpad
 
 <p>Using tcpdump, we noticed that the packet with the &#8220;FIN&#8221; flag set was never send by the client. The strangest was that Wget received more data than Firefox.</p>
 
-<p></p>
-
 <p>After a few hours of investigations, it appeared that Wget was sending header &#8220;keepalive&#8221; to keep the connection open while using http version 1.0. &#8220;Keepalive&#8221; is an illegal header in HTTP 1.0 as it has been introduced with 1.1 revision. This is actually a <a href="https://www.varnish-cache.org/trac/ticket/524">known bug</a>. A workaround is to use it in conjunction with &#8220;-no-http-keep-alive&#8221; command-line option.</p>
 
 <div id="attachment_48" style="width: 310px" class="wp-caption aligncenter">
@@ -157,6 +155,7 @@ Client &lt;----&gt; Reverse-Proxy |&lt;-----&gt; Etherpad
   </p>
 </div>
 </blockquote>
+
       
       
       <div id="share-this" class="col span_10">
@@ -188,7 +187,7 @@ Client &lt;----&gt; Reverse-Proxy |&lt;-----&gt; Etherpad
   
   <nav class="pagination">
     
-      <span class="previous">&larr; <a href="http://blog.yadutaf.fr/about/" rel="prev">About me</a></span>
+      <span class="previous">&larr; <a href="http://blog.yadutaf.fr/2011/09/19/nodejs-reverse-proxy/" rel="prev">Node.Js reverse proxy</a></span>
     
     
       <span class="next"><a href="http://blog.yadutaf.fr/2011/11/20/understanding-mvc-with-express-node-js-and-mongo-db/" rel="next">Understanding MVC with Express/Node.js and mongo.db</a> &rarr;</span>

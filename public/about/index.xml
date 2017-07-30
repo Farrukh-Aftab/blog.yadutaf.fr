@@ -2,21 +2,20 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Abouts on Yet another enthusiast blog!</title>
-    <link>http://blog.yadutaf.fr/about/index.xml</link>
+    <link>http://blog.yadutaf.fr/about/</link>
     <description>Recent content in Abouts on Yet another enthusiast blog!</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <copyright>Jean-Tiare Le Bigot</copyright>
-    <lastBuildDate>Mon, 19 Sep 2011 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 30 Jul 2017 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://blog.yadutaf.fr/about/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>About me</title>
       <link>http://blog.yadutaf.fr/about/</link>
-      <pubDate>Mon, 19 Sep 2011 00:00:00 +0000</pubDate>
+      <pubDate>Sun, 30 Jul 2017 00:00:00 +0000</pubDate>
       
       <guid>http://blog.yadutaf.fr/about/</guid>
-      <description>&lt;p&gt;I am a French system developper working in Toulouse, France. I love designing and building infrastructures. I believe in simplicity as a key success factor and ordinariness as a key failure factor.&lt;/p&gt;
+      <description>&lt;p&gt;I am a French system developer working in Toulouse, France in a self-driving startup called &lt;a href=&#34;http://easymile.com/&#34;&gt;EasyMile&lt;/a&gt;. I love designing and building infrastructures. I believe in simplicity as a key success factor and ordinariness as a key failure factor.&lt;/p&gt;
 
 &lt;p&gt;The linguist in you may wonder what &amp;ldquo;yadutaf&amp;rdquo; stands for. You may think of it as French phonetic transliteration of &amp;ldquo;Plenty of work to be done ahead&amp;rdquo;.&lt;/p&gt;
 
