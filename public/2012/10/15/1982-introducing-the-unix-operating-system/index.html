@@ -70,7 +70,7 @@
     <div class="row gutters">
       <div id="site-title" class="col span_6">
         <h1><a href="http://blog.yadutaf.fr/">Yet another enthusiast blog!</a></h1>
-        <h2>There is no great achievement whithout great challenges.</h2>
+        <h2>There is no great achievement without great challenges.</h2>
       </div>
       <div id="social" class="col span_6">
         <ul>
