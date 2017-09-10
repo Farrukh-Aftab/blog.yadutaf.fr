@@ -6,8 +6,256 @@
     <description>Recent content on Yet another enthusiast blog!</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 30 Jul 2017 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 10 Sep 2017 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://blog.yadutaf.fr/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Running a graphical app in a Docker container, on a remote server</title>
+      <link>http://blog.yadutaf.fr/2017/09/10/running-a-graphical-app-in-a-docker-container-on-a-remote-server/</link>
+      <pubDate>Sun, 10 Sep 2017 00:00:00 +0000</pubDate>
+      
+      <guid>http://blog.yadutaf.fr/2017/09/10/running-a-graphical-app-in-a-docker-container-on-a-remote-server/</guid>
+      <description>
+
+&lt;p&gt;A few days ago, I found myself trying to launch Qemu, the system emulator, into a dedicated &lt;a href=&#34;http://blog.yadutaf.fr/2014/01/19/introduction-to-linux-namespaces-part-5-net/&#34;&gt;network namespace&lt;/a&gt; (that&amp;rsquo;s easy), on a remote host (that&amp;rsquo;s the fun part). As it was fun, I looked for a way to do it. Spoiler alert, it involves &amp;ldquo;xauth&amp;rdquo; tricks, bind mounts and TCP to UNIX domain socket forwarding. No more.&lt;/p&gt;
+
+&lt;p&gt;My first though was that it&amp;rsquo;s probably not worth a blog post. Who uses network namespaces on a daily basis? Not everyone (I do).&lt;/p&gt;
+
+&lt;p&gt;Except that network namespaces are one of the containers corner stone. And quite a lot of people is using Docker on a daily basis, possibly on a remote server, possibly with graphical applications.&lt;/p&gt;
+
+&lt;p&gt;Hmmm, that&amp;rsquo;s another story. Let&amp;rsquo;s write a new container torture post then.&lt;/p&gt;
+
+&lt;p&gt;At the end of this post, you will have a working setup to run graphical applications in a Docker container on a remote server accessed via SSH with X11 forwarding with not particular setup on the container side.&lt;/p&gt;
+
+&lt;h3 id=&#34;running-a-graphical-app-via-ssh:6dc1c5ae07315872c30f93a6902bf01e&#34;&gt;Running a graphical app via SSH&lt;/h3&gt;
+
+&lt;p&gt;Running a graphical application on a remote (Linux) server via SSH is considered a solved problem (at least until we run Wayland on servers&amp;hellip;). Here is a quick walk through anyway.&lt;/p&gt;
+
+&lt;p&gt;By default, if you try to run an X11 based graphical application via SSH, it will not display anything and instead print a rather cryptic error message:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;ssh localhost -- xterm
+xterm: Xt error: Can&#39;t open display: 
+xterm: DISPLAY is not set
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This is easily fixed by explicitly enabling X11 forwarding, if the server policy allows it, by adding the &amp;ldquo;-X&amp;rdquo; argument:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;ssh -X localhost -- xterm
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You should now see a beautiful xterm window. Granted, it&amp;rsquo;s not the most impressive. Who cares?&lt;/p&gt;
+
+&lt;h3 id=&#34;running-a-graphical-app-inside-a-docker:6dc1c5ae07315872c30f93a6902bf01e&#34;&gt;Running a graphical app inside a Docker&lt;/h3&gt;
+
+&lt;p&gt;Running a graphical application in a Docker container, is also considered a solved problem, mostly thanks to &lt;a href=&#34;https://blog.jessfraz.com/post/docker-containers-on-the-desktop/&#34;&gt;Jessie Frazelle&amp;rsquo;s posts on the topic&lt;/a&gt; and numerous other SO questions and posts. Let&amp;rsquo;s do one more :)&lt;/p&gt;
+
+&lt;p&gt;For the sake of this post, I&amp;rsquo;ll use this simple Dockerfile:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;FROM ubuntu
+
+RUN apt-get update &amp;amp;&amp;amp; apt-get install -y xterm
+RUN useradd -ms /bin/bash xterm
+USER xterm
+WORKDIR /home/xterm
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;All it does is start from a Ubuntu image, install the xterm package, creates a dedicated user and set the env to use this user. This is in no way the perfect Dockerfile, but it serves its goal!&lt;/p&gt;
+
+&lt;p&gt;If you try to run it the &amp;ldquo;naive&amp;rdquo; way, here is what it should look like:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;$&amp;gt; docker run -it --rm xterm xterm 
+xterm: Xt error: Can&#39;t open display: 
+xterm: DISPLAY is not set
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;OK, let&amp;rsquo;s bring in the DISPLAY variable&amp;hellip; and bring the related X11 Unix socket:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;docker run -it --rm -e DISPLAY=${DISPLAY} -v /tmp/.X11-unix:/tmp/.X11-unix xterm xterm
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Great, an Xterm window. Told you this is one was easy.&lt;/p&gt;
+
+&lt;h3 id=&#34;next-level-running-a-graphical-application-in-a-docker-via-ssh:6dc1c5ae07315872c30f93a6902bf01e&#34;&gt;Next level: Running a graphical application in a Docker via SSH&lt;/h3&gt;
+
+&lt;p&gt;Now that we know how to run a graphical app from a Docker container &lt;em&gt;OR&lt;/em&gt; from a remote server via SSH, let&amp;rsquo;s see how we can do &lt;em&gt;both&lt;/em&gt; at a time. Let&amp;rsquo;s run a graphical application inside a Docker container, on a remote server.&lt;/p&gt;
+
+&lt;p&gt;First, let&amp;rsquo;s try to naively chain both tricks: (spoiler: it won&amp;rsquo;t work)&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;ssh -X localhost
+docker run -it --rm -e DISPLAY=${DISPLAY} -v /tmp/.X11-unix:/tmp/.X11-unix xterm xterm
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You should get an error like:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;xterm: Xt error: Can&#39;t open display: localhost:10.0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;OK, so the brute force approach does not work. What&amp;rsquo;s going on exactly?&lt;/p&gt;
+
+&lt;p&gt;Have a look at the &lt;code&gt;DISPLAY&lt;/code&gt; environment variable, when running a graphical app:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;In a Docker container: &lt;code&gt;:0&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;On a remote server via SSH: &lt;code&gt;localhost:10.0&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Your mileage may vary, but the first obvious things is they do not describe the same thing.&lt;/p&gt;
+
+&lt;p&gt;The first one, the Docker version, instructs the X11 client to look for the &lt;code&gt;/tmp/.X11-unix/X0&lt;/code&gt; UNIX domain socket to talk to the local X server. Obviously, using a UNIX domain socket has not chance to work on a remote system. Hence the different value. It instructs the X11 client to talk to the &amp;ldquo;remote&amp;rdquo; X server on localhost, &amp;ldquo;slot&amp;rdquo; 10 over TCP.&lt;/p&gt;
+
+&lt;p&gt;I said &amp;ldquo;slot&amp;rdquo; as this is not an actual port number. The actual port number is &lt;code&gt;6000 + slot&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;We can now see that the process listening on port 6010 on the server is the SSH daemon itself:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;sudo lsof -i4:6010
+COMMAND   PID       USER   FD   TYPE   DEVICE SIZE/OFF NODE NAME
+sshd    30333 jean-tiare   10u  IPv4 23770030      0t0  TCP localhost:6010 (LISTEN)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;In this case the SSH daemon opens a TCP tunnel between the client and the remote server and forwards all data to the local server as specified by the local &lt;code&gt;DISPLAY&lt;/code&gt; environment variable.&lt;/p&gt;
+
+&lt;p&gt;One way to overcome this limitation is to launch the Docker container using the host&amp;rsquo;s network namespace with &lt;code&gt;--net host&lt;/code&gt; but this is generally not what you want as you&amp;rsquo;d break your network isolation in the same time.&lt;/p&gt;
+
+&lt;p&gt;Another way to overcome this, is to re-export the TCP connection as a UNIX domain socket and launch the application like we are used to. Fortunately, a well-known tool can do exactly this: socat.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;# Log into the remote server
+ssh -X localhost
+
+# Get the Display number from the DISPLAY variable
+DISPLAY_NUMBER=$(echo $DISPLAY | cut -d. -f1 | cut -d: -f2)
+
+# Proxy between the TCP and the Unix domain world, in the background
+socat TCP4:localhost:60${DISPLAY_NUMBER} UNIX-LISTEN:/tmp/.X11-unix/X${DISPLAY_NUMBER} &amp;amp;
+
+# Expose the &amp;quot;new&amp;quot; display address
+export DISPLAY=:$(echo $DISPLAY | cut -d. -f1 | cut -d: -f2)
+
+# Finally, open xterm in the Docker....
+docker run -it --rm -e &#39;DISPLAY=${DISPLAY}&#39; -v /tmp/.X11-unix:/tmp/.X11-unix xterm xterm
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Which should output something like:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;X11 connection rejected because of wrong authentication.
+xterm: Xt error: Can&#39;t open display: :10
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&amp;ldquo;Wrong authentication&amp;rdquo;? What do you mean by &amp;ldquo;wrong authentication&amp;rdquo;?&lt;/p&gt;
+
+&lt;p&gt;X11 uses a concept of &amp;ldquo;magic cookies&amp;rdquo; to grant access to the server. A bit like web cookies. If you don&amp;rsquo;t have the cookie, you can not open a connection to the server and then not display anything. This authentication information is stored in &lt;code&gt;~/.Xauthority&lt;/code&gt; and can be manipulated using the &lt;code&gt;xauth&lt;/code&gt; command.&lt;/p&gt;
+
+&lt;p&gt;Still from the SSH connection, Let&amp;rsquo;s retry the proxy trick with the authority file mounted in the container:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;socat TCP4:localhost:60${DISPLAY_NUMBER} UNIX-LISTEN:/tmp/.X11-unix/X${DISPLAY_NUMBER} &amp;amp;
+docker run -it --rm \
+  -e DISPLAY=${DISPLAY} \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v ${HOME}/.Xauthority:/home/xterm/.Xauthority \
+  xterm xterm  
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And&amp;hellip;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;X11 connection rejected because of wrong authentication.
+xterm: Xt error: Can&#39;t open display: :10
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Still not&amp;hellip;&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s have a look at what &lt;code&gt;xauth list&lt;/code&gt; outputs:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;...
+jt-laptop/unix:10  MIT-MAGIC-COOKIE-1  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The cookie is obviously bogus in the example. But the interesting part is: the hostname is actually part of the authentication. Each Docker container get its own hostname. Maybe that&amp;rsquo;s the cause of the last failure?&lt;/p&gt;
+
+&lt;p&gt;We can cheat and force the hostname inside the container to be the same as the SSH host and retry:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;socat TCP4:localhost:60${DISPLAY_NUMBER} UNIX-LISTEN:/tmp/.X11-unix/X${DISPLAY_NUMBER} &amp;amp;
+docker run -it --rm \
+  -e DISPLAY=${DISPLAY} \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v $HOME/.Xauthority:/home/xterm/.Xauthority \
+  --hostname $(hostname) \
+  xterm xterm
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;It works! &amp;trade;&lt;/p&gt;
+
+&lt;p&gt;To sum it up:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;# Open an SSH connection to the remote server
+ssh -X localhost
+
+# Get the DISPLAY slot and create the new DISPLAY variable
+DISPLAY_NUMBER=$(echo $DISPLAY | cut -d. -f1 | cut -d: -f2)
+export DISPLAY=:${DISPLAY_NUMBER}
+
+# Proxy between the TCP and the Unix domain world, in the background
+socat TCP4:localhost:60${DISPLAY_NUMBER} UNIX-LISTEN:/tmp/.X11-unix/X${DISPLAY_NUMBER} &amp;amp;
+
+# Finally, open xterm in the Docker....
+docker run -it --rm \
+  -e &#39;DISPLAY=${DISPLAY}&#39; \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  --hostname $(hostname) \
+  xterm xterm
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&#34;stretch-goal-clean-it-up:6dc1c5ae07315872c30f93a6902bf01e&#34;&gt;Stretch goal: clean it up!&lt;/h3&gt;
+
+&lt;p&gt;The proof of concept works, that&amp;rsquo;s great. How can we make it cleaner? Well, first remember that containers goal is to to isolate as much as possible an application from the host. Sharing the X11 server is not exactly the best way to do it&amp;hellip; but we we can&amp;rsquo;t really help on that. What we can (should) isolate:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;The hostname. We overloaded it such that it matches the one of the SSH server.&lt;/li&gt;
+&lt;li&gt;The Unix sockets. They are all shared in all containers sharing the same trick.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;We can set the DISPLAY variable to whatever we want, provided&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;We have the corresponding UNIX domain socket&lt;/li&gt;
+&lt;li&gt;We have the corresponding authentication cookie&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;The later is also true for the hostname.&lt;/p&gt;
+
+&lt;p&gt;On the remote server, let&amp;rsquo;s do some setup:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;# Prepare target env
+CONTAINER_DISPLAY=&amp;quot;0&amp;quot;
+CONTAINER_HOSTNAME=&amp;quot;xterm&amp;quot;
+
+# Create a directory for the socket
+mkdir -p display/socket
+touch display/Xauthority
+
+# Get the DISPLAY slot
+DISPLAY_NUMBER=$(echo $DISPLAY | cut -d. -f1 | cut -d: -f2)
+
+# Extract current authentication cookie
+AUTH_COOKIE=$(xauth list | grep &amp;quot;^$(hostname)/unix:${DISPLAY_NUMBER} &amp;quot; | awk &#39;{print $3}&#39;)
+
+# Create the new X Authority file
+xauth -f display/Xauthority add ${CONTAINER_HOSTNAME}/unix:${CONTAINER_DISPLAY} MIT-MAGIC-COOKIE-1 ${AUTH_COOKIE}
+
+# Proxy with the :0 DISPLAY
+socat TCP4:localhost:60${DISPLAY_NUMBER} UNIX-LISTEN:display/socket/X${CONTAINER_DISPLAY} &amp;amp;
+
+# Launch the container
+docker run -it --rm \
+  -e DISPLAY=:${CONTAINER_DISPLAY} \
+  -v ${PWD}/display/socket:/tmp/.X11-unix \
+  -v ${PWD}/display/Xauthority:/home/xterm/.Xauthority \
+  --hostname ${CONTAINER_HOSTNAME} \
+  xterm xterm
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And voila! (french accent inside) You no have the most beautifully awesome graphical app running on a remote (as far as localhost is remote) server, inside a Docker container.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>About me</title>
@@ -2560,147 +2808,6 @@ int main()
 &lt;p&gt;To leverage the power of this technique you could now prepare and enter a chroot to further enhance the isolation. Steps involved would be to prepare a &amp;#8220;debootstrap&amp;#8221;, remount some essentials filesystems like &amp;#8220;/tmp&amp;#8221;, &amp;#8220;/dev/shm&amp;#8221;, &amp;#8220;/proc&amp;#8221;, optionally all or part of &amp;#8220;/dev&amp;#8221; and &amp;#8220;/sys&amp;#8221; and then &amp;#8220;&lt;a href=&#34;http://linux.die.net/man/2/chdir&#34; title=&#34;man chdir&#34;&gt;chdir&lt;/a&gt;&amp;#8221; + &amp;#8220;&lt;a href=&#34;http://linux.die.net/man/1/chroot&#34; title=&#34;man Chroot&#34;&gt;chroot&lt;/a&gt;&amp;#8220;. I&amp;rsquo;ll leave it as an exercise for the reader.&lt;/p&gt;
 
 &lt;p&gt;That&amp;rsquo;s all for &amp;#8220;NS&amp;#8221; namespace. With the next article we&amp;rsquo;ll explore an incredibly powerful namespace &amp;#8220;NET&amp;#8221;. It&amp;rsquo;s so powerful that it&amp;rsquo;s used as the foundation of the &lt;a href=&#34;http://cs.itd.nrl.navy.mil/work/core/index.php&#34;&gt;&amp;#8220;CORE&amp;#8221; lightweight network simulator&lt;/a&gt;. Thanks for reading !&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Introduction to Linux namespaces - Part 3: PID</title>
-      <link>http://blog.yadutaf.fr/2014/01/05/introduction-to-linux-namespaces-part-3-pid/</link>
-      <pubDate>Sun, 05 Jan 2014 00:00:00 +0000</pubDate>
-      
-      <guid>http://blog.yadutaf.fr/2014/01/05/introduction-to-linux-namespaces-part-3-pid/</guid>
-      <description>&lt;p&gt;Following the &lt;a href=&#34;https://blog.jtlebi.fr/2013/12/28/introduction-to-linux-namespaces-part-2-ipc/&#34; title=&#34;Introduction to Linux namespaces – Part 2: IPC&#34;&gt;previous post on IPC namespace&lt;/a&gt; (Inter Process Communication isolation), I would now like to introduce my personal favorite one (as sysadmin): PID namespaces. If you haven&amp;rsquo;t done so already, I encourage you to read &lt;a href=&#34;https://blog.jtlebi.fr/2013/12/22/introduction-to-linux-namespaces-part-1-uts/&#34; title=&#34;Introduction to Linux namespaces – Part 1: UTS&#34;&gt;the first post of this series for an introduction to linux namespace isolation mechanism&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;[EDIT 2014-01-08] A Chinese translation of this post is available &lt;a href=&#34;http://blog.lucode.net/linux/intro-Linux-namespace-3.html&#34;&gt;here&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;Yes, that&amp;rsquo;s it, with this namespace it is possible to restart PID numbering and get your own &amp;#8220;1&amp;#8221; process. This could be seen as a &amp;#8220;chroot&amp;#8221; in the process identifier tree. It&amp;rsquo;s extremely handy when you need to deal with pids in day to day work and are stuck with 4 digits numbers&amp;#8230;&lt;/p&gt;
-
-&lt;p&gt;Activating it is only a matter of adding &amp;#8220;CLONE_NEWPID&amp;#8221; to the &amp;#8220;clone&amp;#8221; call. It requires no additional setup. It may also be freely combined with other namespaces.&lt;/p&gt;
-
-&lt;p&gt;Once activated, the result of getpid() from child process will invariably be &amp;#8220;1&amp;#8221;.&lt;/p&gt;
-
-&lt;p&gt;But, WAIT! I know have to &amp;#8220;1&amp;#8221; process right ? What about process management ?&lt;/p&gt;
-
-&lt;p&gt;Well, actually, this *really* is much like a &amp;#8220;chroot&amp;#8221;. That is to say, a change of view point.&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Host: &lt;em&gt;all&lt;/em&gt; processes are visible, &lt;em&gt;global&lt;/em&gt; PIDs (init=1, &amp;#8230;, child=xxx, &amp;#8230;.)&lt;/li&gt;
-&lt;li&gt;Container: &lt;em&gt;only child + descendant&lt;/em&gt; are visible, local PIDs (child=1, &amp;#8230;)&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Here is an illustration:&lt;/p&gt;
-
-&lt;pre class=&#34;brush: cpp; highlight: [29,41,44]; title: ; notranslate&#34; title=&#34;&#34;&gt;#define _GNU_SOURCE
-#include &amp;lt;sys/types.h&amp;gt;
-#include &amp;lt;sys/wait.h&amp;gt;
-#include &amp;lt;stdio.h&amp;gt;
-#include &amp;lt;sched.h&amp;gt;
-#include &amp;lt;signal.h&amp;gt;
-#include &amp;lt;unistd.h&amp;gt;
-
-#define STACK_SIZE (1024 * 1024)
-
-// sync primitive
-int checkpoint[2];
-
-static char child_stack[STACK_SIZE];
-char* const child_args[] = {
-  &#34;/bin/bash&#34;,
-  NULL
-};
-
-int child_main(void* arg)
-{
-  char c;
-
-  // init sync primitive
-  close(checkpoint[1]);
-  // wait...
-  read(checkpoint[0], &amp;c, 1);
-
-  printf(&#34; - [%5d] World !\n&#34;, getpid());
-  sethostname(&#34;In Namespace&#34;, 12);
-  execv(child_args[0], child_args);
-  printf(&#34;Ooops\n&#34;);
-  return 1;
-}
-
-int main()
-{
-  // init sync primitive
-  pipe(checkpoint);
-
-  printf(&#34; - [%5d] Hello ?\n&#34;, getpid());
-
-  int child_pid = clone(child_main, child_stack+STACK_SIZE,
-      CLONE_NEWUTS | CLONE_NEWIPC | CLONE_NEWPID | SIGCHLD, NULL);
-
-  // further init here (nothing yet)
-
-  // signal &#34;done&#34;
-  close(checkpoint[1]);
-
-  waitpid(child_pid, NULL, 0);
-  return 0;
-}
-&lt;/pre&gt;
-
-&lt;p&gt;And an example run:&lt;/p&gt;
-
-&lt;pre class=&#34;brush: plain; title: ; notranslate&#34; title=&#34;&#34;&gt;jean-tiare@jeantiare-Ubuntu:~/blog$ gcc -Wall main-3-pid.c -o ns &amp;&amp; sudo ./ns
- - [ 7823] Hello ?
- - [    1] World !
-root@In Namespace:~/blog# echo &#34;=&amp;gt; My PID: $$&#34;
-=&amp;gt; My PID: 1
-root@In Namespace:~/blog# exit
-&lt;/pre&gt;
-
-&lt;p&gt;As expected, even thought the parent process as a PID of &amp;#8220;7823&amp;#8221;, the child&amp;rsquo;s PID is &amp;#8220;1&amp;#8221;. If you are playfull, you could try to &amp;#8220;kill -KILL 7823&amp;#8221; the parent process. It would do exactly&amp;#8230; nothing:&lt;/p&gt;
-
-&lt;pre class=&#34;brush: plain; title: ; notranslate&#34; title=&#34;&#34;&gt;jean-tiare@jeantiare-Ubuntu:~/blog$ gcc -Wall main-3-pid.c -o ns &amp;&amp; sudo ./ns
- - [ 7823] Hello ?
- - [    1] World !
-root@In Namespace:~/blog# kill -KILL 7823
-bash: kill: (7823) - No such process
-root@In Namespace:~/blog# exit
-&lt;/pre&gt;
-
-&lt;p&gt;The isolation is working as expected. And, as written earlier, this behaves much like a &amp;#8220;chroot&amp;#8221; meaning that with a &amp;#8220;top&amp;#8221; or &amp;#8220;ps exf&amp;#8221; from the parent process will show the child process with its real un-mapped PID. This is an essential feature for process control like &amp;#8220;kill&amp;#8221;, &amp;#8220;cgroups&amp;#8221;, &amp;#8230; and various policies.&lt;/p&gt;
-
-&lt;p&gt;Wait! Speaking of &amp;#8220;top&amp;#8221; and &amp;#8220;ps exf&amp;#8221;, I just ran them from the child and saw exactly the same as from the parent. You lied to me about isolation !&lt;/p&gt;
-
-&lt;p&gt;Well, not at all. This is because these tools get their informations from the virtual &amp;#8220;/proc&amp;#8221; filesystem which is not (yet) isolated. This is the purpose of the next article.&lt;/p&gt;
-
-&lt;p&gt;In the mean time, an easy workaround could be:&lt;/p&gt;
-
-&lt;pre class=&#34;brush: plain; highlight: [3,5]; title: ; notranslate&#34; title=&#34;&#34;&gt;# from child
-root@In Namespace:~/blog# mkdir -p proc
-root@In Namespace:~/blog# mount -t proc proc proc
-root@In Namespace:~/blog# ls proc
-1          dma          key-users      net            sysvipc
-80         dri          kmsg           pagetypeinfo   timer_list
-acpi       driver       kpagecount     partitions     timer_stats
-asound     execdomains  kpageflags     sched_debug    tty
-buddyinfo  fb           latency_stats  schedstat      uptime
-bus        filesystems  loadavg        scsi           version
-cgroups    fs           locks          self           version_signature
-cmdline    interrupts   mdstat         slabinfo       vmallocinfo
-consoles   iomem        meminfo        softirqs       vmstat
-cpuinfo    ioports      misc           stat           zoneinfo
-crypto     irq          modules        swaps
-devices    kallsyms     mounts         sys
-diskstats  kcore        mtrr           sysrq-trigger
-&lt;/pre&gt;
-
-&lt;p&gt;Everything seems reasonable again. As expected, you get PID &amp;#8220;1&amp;#8221; for /bin/bash itself and &amp;#8220;80&amp;#8221; corresponds to the running &amp;#8220;/bin/ls proc&amp;#8221; command. Much nicer to read than usual /proc, isn&amp;rsquo;t it ? That&amp;rsquo;s why I love it.&lt;/p&gt;
-
-&lt;p&gt;If you attempt to run this command directly on the &amp;#8220;/proc&amp;#8221; from the namespace, it will &lt;em&gt;seem&lt;/em&gt; to work in the child but BREAK your main namespace. Example:&lt;/p&gt;
-
-&lt;pre class=&#34;brush: plain; title: ; notranslate&#34; title=&#34;&#34;&gt;jean-tiare@jeantiare-Ubuntu:~/blog$ ps aux
-Error, do this: mount -t proc proc /proc
-&lt;/pre&gt;
-
-&lt;p&gt;That&amp;rsquo;s all for PID namespace. With the next article, we&amp;rsquo;ll be able to re-mount /proc itself and hence fix &amp;#8220;top&amp;#8221; and any similar tools without breaking the parent namespace. Thanks for reading !&lt;/p&gt;
 </description>
     </item>
     
