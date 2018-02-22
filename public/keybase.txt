@@ -1,0 +1,69 @@
+==================================================================
+https://keybase.io/yadutaf
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of https://blog.yadutaf.fr
+  * I am yadutaf (https://keybase.io/yadutaf) on keybase.
+  * I have a public key with fingerprint 0B3B 5CD0 587A 470E 3649  5637 DB0E 8712 E389 6576
+
+To do so, I am signing this object:
+
+{
+  "body": {
+    "key": {
+      "eldest_kid": "01014ead33cd40cedcc7433e2a623142c4b68f9e90f32bcf187276745ec5063ece890a",
+      "fingerprint": "0b3b5cd0587a470e36495637db0e8712e3896576",
+      "host": "keybase.io",
+      "key_id": "db0e8712e3896576",
+      "kid": "01014ead33cd40cedcc7433e2a623142c4b68f9e90f32bcf187276745ec5063ece890a",
+      "uid": "f7b80d1b124ca63c2add5e8c04cd2000",
+      "username": "yadutaf"
+    },
+    "service": {
+      "hostname": "blog.yadutaf.fr",
+      "protocol": "https:"
+    },
+    "type": "web_service_binding",
+    "version": 1
+  },
+  "ctime": 1519337735,
+  "expire_in": 157680000,
+  "prev": "d7411ebac0c4d0ba0820dcd60b1e2ab87ceb13b13dfb672088b7955068916bf6",
+  "seqno": 10,
+  "tag": "signature"
+}
+
+which yields the signature:
+
+-----BEGIN PGP MESSAGE-----
+Version: Keybase OpenPGP v2.0.76
+Comment: https://keybase.io/crypto
+
+yMInAnicrZJbSBVBGMePdiMrkxQiKqgNMUVOszu7O7unsEI4RRBZWA+hnXYuq4un
+3ePunlNmSgmSFl0QLOpBogshVhRxNCK6WEQoFRFhd6G0hy5EECSh1azYW4/BwDDf
+/P7/+ebPd2/WpFBWxqvs/XPet7JURv+dk8nQ1iOrp9UL2KF1QqReqGHjG4tT5vmx
+GosKEQGIQJSZQSEkVAaEUUKQDCGTDFWCoiwRGauaqTMdmFDCxBQ1JCEVyQojClAh
+I0zTgSEUC6ZlVzE34Vq2H9hiiBVCgaIhQ0aAQVXWFRUiigHTkCgxqOmqglQurHa8
+QMGbw4bHwpbDa/wQG2/vH/x/7js5bmcirAEqYlGSiaFCIhmUKkwjQCZUAgAEoMdc
+29jBOF1n0KRvmEJDscCLKYuwINfgIxMAjjtV4QkqbLpcnXAd3yFOnF9W+37CiwRi
+vy4R0DsZjk34xLBlU54kV6SY61mOLUREThLfCoxFRdQhRAgqxQLblbBcFrMCgiej
+8S5B8A5LBbkhWRQZNgggMgXYAJoEKKEqwCKPCGuIMCxCvqiJVSQBTcNIV3gymi6q
+2Axy9lit7XBvbuobVdzTs6psw0+6TGjovV0xOZSRFZo6JTMYsVDW9Jy/g3f87bTR
+GWeH07/l5nTbiZ68leUvBvRtO9dFQXZyTWjfyCfpywWrqHogv3R3OK4fPmo8Gul+
+9nr5lcfa53Pt7V/L1syft67kRnnPh7ZjQ08Xnt3UIuRvulvRvmjX0V77wbKx4e7w
+nuczo5V1Twac1iZlUencGZdGyZK+juzG5efbwpV90ZGawcLWzfd/HT5Sm1lwMFdK
+t0bfzLZuzVbvlWdO2j7M8jpgb+FY+ubB0bXui8UdqfKRsZ5H6qFjfZ27h8/8zDmQ
+T36XqSCn69S7gg0rLxfRq0vXeyXF6eaLK+pTjaEFQ/MHf/SVnP74Muv4wy1NT/pX
+Td3YMtS71+y6dmdO3vdvudHrnd1/AIZpQNg=
+=O7CU
+-----END PGP MESSAGE-----
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/yadutaf
+
+==================================================================
+
